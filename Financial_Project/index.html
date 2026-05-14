@@ -338,7 +338,8 @@
     .faq-item.open .faq-answer { max-height: 220px; }
     .faq-item.open .faq-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: black; }
 
-    .newsletter-box {
+    /* Review section — fully local, works on file:// */
+    .review-section {
       background: linear-gradient(145deg, #151514 0%, #0e0e0d 100%);
       border-radius: 36px;
       padding: 3rem;
@@ -349,24 +350,57 @@
       margin: 2rem auto 3rem;
       max-width: 1200px;
     }
-    .newsletter-headline { font-family: var(--display); font-size: 2rem; line-height: 1.2; }
-    .newsletter-headline span { color: var(--accent); }
-    .newsletter-form { display: flex; flex-direction: column; gap: 1rem; }
-    .newsletter-form input {
+    .review-headline {
+      font-family: var(--display);
+      font-size: 2rem;
+      line-height: 1.2;
+    }
+    .review-headline span { color: var(--accent); }
+    .review-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .review-form input, .review-form textarea {
       background: var(--bg3);
       border: 1px solid var(--border2);
       padding: 14px 20px;
       border-radius: 40px;
       color: white;
+      font-family: var(--body);
+      font-size: 0.9rem;
+      resize: vertical;
     }
-    .newsletter-submit {
+    .review-form textarea {
+      border-radius: 24px;
+      min-height: 100px;
+    }
+    .review-form button {
       background: var(--accent);
       border: none;
       padding: 12px;
       border-radius: 40px;
       font-weight: 600;
       cursor: pointer;
+      color: #0b0b0a;
+      transition: 0.2s;
+      font-size: 1rem;
     }
+    .review-form button:hover { transform: translateY(-2px); filter: brightness(0.96); }
+    .review-form button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .status-msg {
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      text-align: center;
+      color: var(--accent);
+    }
+    @media (max-width: 780px) {
+      .review-section { grid-template-columns: 1fr; text-align: center; }
+    }
+
     footer {
       border-top: 1px solid var(--border);
       padding: 2.5rem 2rem;
@@ -379,7 +413,6 @@
     @media (max-width: 780px) {
       .calc-grid { grid-template-columns: 1fr; }
       .faq-layout { grid-template-columns: 1fr; gap: 2rem; }
-      .newsletter-box { grid-template-columns: 1fr; text-align: center; }
     }
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -486,11 +519,27 @@
   <div class="faq-item"><button class="faq-question">What is the 50/30/20 rule?<span class="faq-icon">+</span></button><div class="faq-answer"><p class="faq-answer-inner">50% needs, 30% wants, 20% savings. Adjust to 60/20/20 for high-rent cities — that's still a solid start.</p></div></div>
   </div></div></div></section>
 
-  <div class="newsletter-box">
-    <div><h3 class="newsletter-headline">Don't stay <span>broke</span> — get the weekly fix</h3><p class="section-desc" style="margin-top:0.8rem">1 email per week. No spam. Real money tips.</p></div>
-    <div class="newsletter-form"><input type="email" placeholder="your@email.com" id="newsEmail"><button class="newsletter-submit" id="subBtn">Subscribe →</button></div>
+  <!-- REVIEW SECTION – FULLY LOCAL (works on file://, stores reviews in localStorage) -->
+  <div class="review-section">
+    <div>
+      <h3 class="review-headline">We’d love your <span>feedback</span> — help us improve</h3>
+      <p class="section-desc" style="margin-top:0.8rem">Your review helps us build better tools for everyone. Thank you for supporting BrokeNoMore.</p>
+    </div>
+    <div class="review-form">
+      <form id="reviewForm" style="display: contents;">
+        <input type="text" name="name" id="reviewName" placeholder="Your name" required>
+        <input type="email" name="email" id="reviewEmail" placeholder="Your email (optional)">
+        <textarea name="message" id="reviewMessage" placeholder="Write your review, suggestion, or bug report..." required></textarea>
+        <button type="submit" id="sendReviewBtn">Send Review →</button>
+      </form>
+      <div id="reviewStatus" class="status-msg"></div>
+      <div style="margin-top: 0.5rem; text-align: center;">
+        <button type="button" id="exportReviewsBtn" class="btn-ghost" style="background: transparent; border:1px solid var(--border2); padding:6px 12px; border-radius:30px; font-size:0.75rem;">📋 Export my reviews</button>
+      </div>
+    </div>
   </div>
 </main>
+
 <footer><span class="footer-logo">BrokeNoMore</span><div style="display:flex; gap:1.5rem;"><a href="#calculator" style="color:var(--muted); text-decoration:none;">Calculator</a><a href="#articles" style="color:var(--muted); text-decoration:none;">Guides</a></div><p class="footer-copy">© 2025 BrokeNoMore. Multi-currency support.</p></footer>
 
 <script>
@@ -515,20 +564,13 @@
     } catch(e) {
       formatted = absAmount.toLocaleString();
     }
-    // Add symbol
     if (currentCurrency.symbol === 'Rp' || currentCurrency.symbol === '₫') {
       return `${currentCurrency.symbol}${formatted}`;
     }
     return `${currentCurrency.symbol} ${formatted}`;
   }
   
-  function formatNumberWithCurrency(amount) {
-    return formatMoney(amount);
-  }
-  
-  // Update all UI elements that display static amounts (hero panel, calculator results)
   function updateAllCurrencyDisplays() {
-    // Update hero panel based on 4000 example numbers
     const baseSalary = 4000;
     const needs = 2000;
     const wants = 1200;
@@ -537,12 +579,9 @@
     document.getElementById('heroNeeds').innerText = formatMoney(needs);
     document.getElementById('heroWants').innerText = formatMoney(wants);
     document.getElementById('heroSavings').innerText = formatMoney(savings);
-    
-    // Re-run calculator to refresh dynamic numbers
     calculate();
   }
   
-  // Get effective take-home salary after EPF logic (user can interpret EPF as local CPF equivalent)
   function getEffectiveSalary() {
     let salary = parseFloat(document.getElementById('salary').value) || 0;
     if (salary < 0) salary = 0;
@@ -600,7 +639,6 @@
     `;
     document.getElementById('breakdownContainer').innerHTML = breakdownHtml;
     
-    // Health Score based on actual savings ratio
     let score = 70;
     const savingsRatio = Math.min(1, Math.max(0, actualSavings / effectiveSalary));
     const fixedRatio = fixed / effectiveSalary;
@@ -628,6 +666,67 @@
     calculate();
   }
   
+  // === LOCAL REVIEW SYSTEM (works on file://, no iframe, no fetch) ===
+  function setupReviewForm() {
+    const form = document.getElementById('reviewForm');
+    const statusDiv = document.getElementById('reviewStatus');
+    const sendBtn = document.getElementById('sendReviewBtn');
+    const exportBtn = document.getElementById('exportReviewsBtn');
+    
+    function loadReviews() {
+      const stored = localStorage.getItem('brokennomore_reviews');
+      return stored ? JSON.parse(stored) : [];
+    }
+    
+    function saveReview(review) {
+      const reviews = loadReviews();
+      reviews.push({ ...review, timestamp: new Date().toISOString() });
+      localStorage.setItem('brokennomore_reviews', JSON.stringify(reviews));
+    }
+    
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reviewName').value.trim();
+      const message = document.getElementById('reviewMessage').value.trim();
+      if (!name || !message) {
+        statusDiv.textContent = '❌ Please enter your name and your review.';
+        statusDiv.style.color = 'var(--danger)';
+        return;
+      }
+      const email = document.getElementById('reviewEmail').value.trim();
+      saveReview({ name, email, message });
+      document.getElementById('reviewName').value = '';
+      document.getElementById('reviewEmail').value = '';
+      document.getElementById('reviewMessage').value = '';
+      statusDiv.textContent = '✅ Thank you! Your review has been saved locally. Use "Export my reviews" to send it to us.';
+      statusDiv.style.color = 'var(--accent)';
+      setTimeout(() => { if (statusDiv.textContent.includes('saved locally')) statusDiv.textContent = ''; }, 5000);
+    });
+    
+    exportBtn.addEventListener('click', () => {
+      const reviews = loadReviews();
+      if (reviews.length === 0) {
+        statusDiv.textContent = '📭 No reviews yet. Submit one first!';
+        statusDiv.style.color = 'var(--accent2)';
+        setTimeout(() => { if (statusDiv.textContent.includes('No reviews')) statusDiv.textContent = ''; }, 3000);
+        return;
+      }
+      const dataStr = JSON.stringify(reviews, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `brokennomore_reviews_${new Date().toISOString().slice(0,19)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      statusDiv.textContent = `📁 Exported ${reviews.length} review(s). You can now email the file to us.`;
+      statusDiv.style.color = 'var(--accent)';
+      setTimeout(() => { if (statusDiv.textContent.includes('Exported')) statusDiv.textContent = ''; }, 5000);
+    });
+  }
+  
   function attachEvents() {
     document.getElementById('salary').addEventListener('input', calculate);
     document.getElementById('fixed').addEventListener('input', calculate);
@@ -640,20 +739,16 @@
       const selected = e.target.selectedOptions[0];
       const symbol = selected.getAttribute('data-symbol');
       const locale = selected.getAttribute('data-locale');
-      currentCurrency = {
-        code: selected.value,
-        symbol: symbol,
-        locale: locale
-      };
+      currentCurrency = { code: selected.value, symbol: symbol, locale: locale };
       updateAllCurrencyDisplays();
     });
+    
+    setupReviewForm(); // local storage reviews — safe for file://
   }
   
-  // Initialize
   window.addEventListener('load', () => {
     attachEvents();
     calculate();
-    // Hero progress bar animation
     setTimeout(() => {
       document.getElementById('pb1').style.width = '50%';
       document.getElementById('pb2').style.width = '30%';
@@ -672,12 +767,6 @@
         document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
         if(!isOpen) item.classList.add('open');
       });
-    });
-    
-    document.getElementById('subBtn').addEventListener('click', () => {
-      const email = document.getElementById('newsEmail')?.value;
-      if(email && email.includes('@')) alert(`Thanks ${email}! You'll get weekly tips.`);
-      else alert('Please enter a valid email address.');
     });
   });
 </script>
